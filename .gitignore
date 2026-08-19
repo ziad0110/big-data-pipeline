@@ -1,0 +1,26 @@
+﻿# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*.class
+.pytest_cache/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# OS Specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs & Temporary
+*.log
+scratch/
+tmp/
+
+# Huge Data Files (keep repo lightweight)
+data/*.csv
+!data/.gitkeep
