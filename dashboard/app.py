@@ -41,13 +41,19 @@ st.markdown("""
     
     html, body, [class*="css"] {
         font-family: 'Cairo', sans-serif !important;
-        direction: rtl;
-        text-align: right;
     }
     
     .stApp {
         background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
         color: #f8fafc;
+        direction: rtl;
+        text-align: right;
+    }
+    
+    /* منع تشويه الرسوم البيانية لـ Plotly */
+    .js-plotly-plot, .plotly, [data-testid="stPlotlyChart"] {
+        direction: ltr !important;
+        text-align: left !important;
     }
     
     .metric-card {
@@ -111,6 +117,25 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# قاموس ترجمة رموز الأخطاء لأسماء عربية واضحة
+ERROR_LABELS = {
+    "MISSING_CUSTOMER_ID": "معرف العميل مفقود (MISSING_CUSTOMER_ID)",
+    "CORRUPTED_ITEMS_JSON": "كود المنتجات تالف (CORRUPTED_ITEMS_JSON)",
+    "INVALID_PAYMENT_STATUS": "حالة دفع غير مسموحة (INVALID_PAYMENT_STATUS)",
+    "INVALID_NUMERIC": "مبلغ غير صالح (INVALID_NUMERIC)",
+    "IMPOSSIBLE_DATE": "تاريخ مستحيل/تالف (IMPOSSIBLE_DATE)",
+    "MISSING_ORDER_ID": "معرف الطلب مفقود (MISSING_ORDER_ID)",
+    "INVALID_STATUS": "حالة طلب غير مسموحة (INVALID_STATUS)",
+    "INVALID_CURRENCY": "عملة غير مسموحة (INVALID_CURRENCY)",
+    "INVALID_PHONE": "رقم هاتف غير مطابق (INVALID_PHONE)",
+    "UNKNOWN_PRICE": "سعر مجهول (UNKNOWN_PRICE)",
+    "EMPTY_ITEMS": "قائمة منتجات فارغة (EMPTY_ITEMS)",
+    "SYMBOLIC_VALUE": "قيمة رمزية مجهولة ??? (SYMBOLIC_VALUE)",
+    "INVALID_QUANTITY": "كمية سالبة أو صفرية (INVALID_QUANTITY)",
+    "CORRUPTED_EMAIL": "بريد إلكتروني تالف (CORRUPTED_EMAIL)",
+    "MISSING_NUMERIC": "حقل رقمي مفقود (MISSING_NUMERIC)",
+}
+
 @st.cache_resource
 def get_mongo_db():
     try:
@@ -142,7 +167,6 @@ with st.sidebar:
         
     st.markdown("---")
     st.markdown("#### 🚀 التحكم السريع في خط البيانات")
-    sample_choice = st.selectbox("اختر حجم العينة للاختبار:", ["100,000 سجل (الحالي)", "50,000 سجل"], index=0)
     
     if st.button("⚡ تشغيل خط البيانات الآن (ELT Pipeline)", use_container_width=True):
         with st.spinner("جاري تشغيل خط البيانات والمعالجة التدفقية..."):
@@ -173,6 +197,9 @@ tab1, tab2, tab3, tab4 = st.tabs([
     "🏗️ المعمارية ومحاكي التوجيه (Architecture & Router)"
 ])
 
+# =============================================================================
+# TAB 1: مراقبة خط البيانات الحية ومجموعات MongoDB
+# =============================================================================
 with tab1:
     results_report = load_json_report("results.json")
     
@@ -229,21 +256,26 @@ with tab1:
     else:
         st.warning("تعذر الاتصال بـ MongoDB محلياً لعرض السجلات الحية.")
 
+# =============================================================================
+# TAB 2: تحليلات الـ 30 مليون سجل بـ Apache Spark
+# =============================================================================
 with tab2:
     st.markdown("### ⚡ مركز تحليلات البيانات الضخمة (30 Million Records Analysis via PySpark)")
-    st.markdown("يقوم هذا القسم بقراءة ملف الـ **13.26 GB** كاملاً في الذاكرة العشوائية عبر محرك **Apache Spark** بتوازي 16 بارتشن واستخراج المؤشرات الإحصائية والتجارية الكبرى.")
+    st.markdown("يقوم هذا القسم بقراءة ملف الـ **13.26 GB** كاملاً في الذاكرة العشوائية عبر محرك **Apache Spark** بتوازي 16 بارتشن واستخراج المؤشرات الإحصائية والتجارية الكبرى دون حفظها في القرص.")
     
     spark_rep = load_json_report("spark_analysis_30m.json")
     
-    col_btn, col_info = st.columns([1, 3])
+    col_btn, col_info = st.columns([1, 2])
     with col_btn:
-        if st.button("🔥 تشغيل تحليل الـ 30M بـ PySpark الآن", use_container_width=True):
-            with st.spinner("جاري قراءة وتجميع الـ 13.26 جيجابايت عبر Apache Spark..."):
-                from src.spark_analyzer import analyze_dataset
-                huge_csv = PROJECT_ROOT.parent / "big data" / "orders_huge_mixed_quality.csv"
-                spark_rep = analyze_dataset(str(huge_csv))
-                st.success("✅ اكتمل تحليل البيانات الضخمة بنجاح!")
-                st.rerun()
+        run_30m = st.button("🔥 تشغيل تحليل ملف الـ 13.26 GB كاملاً الآن بـ PySpark", use_container_width=True)
+        
+    if run_30m:
+        with st.spinner("جاري قراءة وتجميع الـ 13.26 جيجابايت كاملاً عبر Apache Spark (قد يستغرق 1-3 دقائق)..."):
+            from src.spark_analyzer import analyze_dataset
+            huge_csv = PROJECT_ROOT.parent / "big data" / "orders_huge_mixed_quality.csv"
+            spark_rep = analyze_dataset(str(huge_csv))
+            st.success("✅ اكتمل تحليل البيانات الضخمة بنجاح تام!")
+            st.rerun()
                 
     if spark_rep:
         k1, k2, k3, k4 = st.columns(4)
@@ -272,7 +304,7 @@ with tab2:
                     color_continuous_scale='Viridis',
                     template='plotly_dark'
                 )
-                fig_city.update_layout(font_family="Cairo")
+                fig_city.update_layout(font_family="Cairo", margin=dict(l=40, r=40, t=50, b=40))
                 st.plotly_chart(fig_city, use_container_width=True)
                 
         with g2:
@@ -285,7 +317,7 @@ with tab2:
                     hole=0.45,
                     template='plotly_dark'
                 )
-                fig_pm.update_layout(font_family="Cairo")
+                fig_pm.update_layout(font_family="Cairo", margin=dict(l=40, r=40, t=50, b=40))
                 st.plotly_chart(fig_pm, use_container_width=True)
                 
         g3, g4 = st.columns(2)
@@ -298,7 +330,7 @@ with tab2:
                     title='📋 توزيع حالات الطلبات (Order Statuses)',
                     template='plotly_dark'
                 )
-                fig_st.update_layout(font_family="Cairo")
+                fig_st.update_layout(font_family="Cairo", margin=dict(l=40, r=40, t=50, b=40))
                 st.plotly_chart(fig_st, use_container_width=True)
                 
         with g4:
@@ -311,28 +343,42 @@ with tab2:
                     color='نوع التوصيل',
                     template='plotly_dark'
                 )
-                fig_del.update_layout(font_family="Cairo")
+                fig_del.update_layout(font_family="Cairo", margin=dict(l=40, r=40, t=50, b=40))
                 st.plotly_chart(fig_del, use_container_width=True)
     else:
-        st.info("💡 اضغط على زر **تشغيل تحليل الـ 30M بـ PySpark الآن** لمعالجة الملف الضخم وعرض الرسوم البيانية التفاعلية فوراً!")
+        st.warning("⚠️ **لم يتم تشغيل تحليل ملف الـ 13.26 GB بعد.**\n\nاضغط على الزر أعلاه: **🔥 تشغيل تحليل ملف الـ 13.26 GB كاملاً الآن بـ PySpark** لتشغيل محرك Apache Spark الموزع واستخراج الأرقام والإحصائيات الحقيقية أمامك!")
 
+# =============================================================================
+# TAB 3: مركز جودة البيانات وسلة العزل ومستكشف الـ Audit Trail
+# =============================================================================
 with tab3:
     st.markdown("### 🛡️ مركز جودة البيانات وسلة العزل (Data Quality & Quarantine)")
     
     results_report = load_json_report("results.json")
     if results_report and 'error_breakdown' in results_report:
         err_dict = results_report['error_breakdown']
-        df_err = pd.DataFrame(list(err_dict.items()), columns=['رمز الخطأ (Error Code)', 'عدد التكرار']).sort_values('عدد التكرار', ascending=True)
+        
+        # تحويل الرموز الإنجليزية لأسماء عربية واضحة ومقروءة
+        formatted_errs = []
+        for k, v in err_dict.items():
+            label = ERROR_LABELS.get(k, k)
+            formatted_errs.append({"الخطأ": label, "العدد": v})
+            
+        df_err = pd.DataFrame(formatted_errs).sort_values("العدد", ascending=True)
         
         fig_err = px.bar(
-            df_err, x='عدد التكرار', y='رمز الخطأ (Error Code)',
-            orientation='h',
-            title='⛔ أكثر الأخطاء تكراراً في سلة العزل (Top Quarantine Reasons)',
-            color='عدد التكرار',
-            color_continuous_scale='Reds',
-            template='plotly_dark'
+            df_err, x="العدد", y="الخطأ",
+            orientation="h",
+            title="⛔ أكثر الأخطاء تكراراً في سلة العزل (Top Quarantine Reasons)",
+            color="العدد",
+            color_continuous_scale="Reds",
+            template="plotly_dark"
         )
-        fig_err.update_layout(font_family="Cairo")
+        fig_err.update_layout(
+            font_family="Cairo",
+            margin=dict(l=280, r=40, t=50, b=40),
+            yaxis=dict(autorange="reversed")
+        )
         st.plotly_chart(fig_err, use_container_width=True)
         
     st.markdown("---")
@@ -361,6 +407,9 @@ with tab3:
     else:
         st.warning("يرجى تشغيل MongoDB لعرض سجلات التدقيق.")
 
+# =============================================================================
+# TAB 4: المعمارية ومحاكي موجه الملفات (Architecture & Router Simulator)
+# =============================================================================
 with tab4:
     st.markdown("### 🏗️ معمارية خط البيانات الهجين ومحاكي الـ File Router")
     
