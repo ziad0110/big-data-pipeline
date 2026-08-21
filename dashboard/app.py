@@ -459,9 +459,9 @@ with tab2:
         
     if run_30m:
         with st.spinner("جاري قراءة وتجميع الـ 13.26 جيجابايت (30 مليون سجل) عبر Apache Spark..."):
-            from src.spark_analyzer import analyze_dataset
+            import subprocess
             huge_csv = PROJECT_ROOT.parent / "big data" / "orders_huge_mixed_quality.csv"
-            spark_rep = analyze_dataset(str(huge_csv))
+            subprocess.run([sys.executable, str(PROJECT_ROOT / "src" / "spark_analyzer.py"), "--input", str(huge_csv)], check=True)
             st.success("✅ اكتمل تحليل الـ 30 مليون سجل بنجاح تام!")
             st.rerun()
                 
@@ -641,9 +641,9 @@ with tab3:
     
     if st.button("🏁 بدء اختبار المقارنة بين المحركين الآن (Run Dual Benchmark)", use_container_width=True):
         with st.spinner("جاري تشغيل خط البيانات على محرك Python ومحرك PySpark بالتتابع للمقارنة..."):
-            from src.benchmark import run_benchmark
+            import subprocess
             target_csv = PROJECT_ROOT / "data" / "sample_orders.csv"
-            bench_rep = run_benchmark(str(target_csv))
+            subprocess.run([sys.executable, str(PROJECT_ROOT / "src" / "benchmark.py"), "--input", str(target_csv)], check=True)
             st.success("✅ اكتمل اختبار المقارنة المعيارية بنجاح!")
             st.rerun()
             

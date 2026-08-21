@@ -110,6 +110,10 @@ def run_benchmark(file_path: str, run_python: bool = True, run_spark: bool = Tru
 
 
 if __name__ == "__main__":
-    target = PROJECT_ROOT / "data" / "sample_orders.csv"
-    res = run_benchmark(str(target))
+    import argparse
+    parser = argparse.ArgumentParser(description="Run Dual Engine Benchmark")
+    parser.add_argument("--input", "-i", default=str(PROJECT_ROOT / "data" / "sample_orders.csv"), help="CSV input path")
+    args = parser.parse_args()
+    
+    res = run_benchmark(args.input)
     print(json.dumps(res, ensure_ascii=False, indent=2))
