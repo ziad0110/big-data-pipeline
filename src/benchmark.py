@@ -18,7 +18,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.metrics import get_memory_mb, PipelineMetrics
-from src import python_loader
+from src import batch_loader
 from src import spark_loader
 
 
@@ -48,7 +48,7 @@ def run_benchmark(file_path: str, run_python: bool = True, run_spark: bool = Tru
         p_start_mem = get_memory_mb()
         p_start_time = time.perf_counter()
         
-        python_loader.load(str(input_file), run_id=p_run_id, metrics=p_metrics)
+        batch_loader.load(str(input_file), run_id=p_run_id, metrics=p_metrics)
         
         p_elapsed = time.perf_counter() - p_start_time
         p_end_mem = get_memory_mb()
