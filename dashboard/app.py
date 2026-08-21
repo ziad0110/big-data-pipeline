@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-app.py — لوحة التحكم التفاعلية المتقدمة لخط البيانات الهجين وتحليلات الـ 30 مليون سجل
-Advanced Interactive Web Dashboard for Hybrid ELT Pipeline & 30M PySpark Analytics
+app.py — منصة البيانات الضخمة التفاعلية (Enterprise Big Data Dashboard)
+Hybrid ELT Pipeline & PySpark Distributed Analytics Platform
 مقرر البيانات الضخمة (العملي) | جامعة الرازي | إشراف: م. عمر أبو سند
 الطالب: زياد (السنة الرابعة)
 """
@@ -28,114 +28,136 @@ from config.settings import (
     QUARANTINE_COLLECTION, SMALL_FILE_THRESHOLD_MB
 )
 
+# ─── إعداد الصفحة وتصميم الـ UI المتقدم ───
 st.set_page_config(
-    page_title="منصة خط البيانات الضخمة | Hybrid ELT Pipeline",
+    page_title="منصة خط البيانات الضخمة | Hybrid ELT Platform",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
+# ─── CSS فخم بنظام التصميم العصري (Cairo Typography & Glassmorphism) ───
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap');
     
-    html, body, [class*="css"] {
+    * {
         font-family: 'Cairo', sans-serif !important;
     }
     
     .stApp {
-        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+        background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #0f172a 70%, #020617 100%);
         color: #f8fafc;
         direction: rtl;
         text-align: right;
     }
     
-    /* منع تشويه الرسوم البيانية لـ Plotly */
+    /* عزل منطقة الرسوم البيانية لـ Plotly لتجنب أي انعكاس نصي */
     .js-plotly-plot, .plotly, [data-testid="stPlotlyChart"] {
         direction: ltr !important;
         text-align: left !important;
     }
     
-    .metric-card {
-        background: rgba(30, 41, 59, 0.7);
-        border: 1px solid rgba(148, 163, 184, 0.15);
-        border-radius: 16px;
-        padding: 20px;
-        backdrop-filter: blur(12px);
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    /* بطاقات المؤشرات الفاخرة */
+    .kpi-card {
+        background: rgba(30, 41, 59, 0.65);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 18px;
+        padding: 22px 16px;
+        backdrop-filter: blur(16px);
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
         text-align: center;
-        transition: transform 0.3s ease, border-color 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
     }
-    .metric-card:hover {
-        transform: translateY(-4px);
-        border-color: #6366f1;
+    .kpi-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(99, 102, 241, 0.4);
+        box-shadow: 0 20px 35px -10px rgba(99, 102, 241, 0.25);
     }
     
-    .metric-value {
-        font-size: 2.2rem;
+    .kpi-title {
+        font-size: 0.92rem;
+        color: #94a3b8;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+    
+    .kpi-number {
+        font-size: 2.1rem;
         font-weight: 900;
-        background: linear-gradient(90deg, #38bdf8, #818cf8);
+        background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        line-height: 1.2;
     }
     
-    .metric-label {
-        font-size: 0.95rem;
-        color: #94a3b8;
+    .kpi-subtitle {
+        font-size: 0.78rem;
+        color: #64748b;
         margin-top: 4px;
     }
-    
-    .badge-success {
-        background: rgba(34, 197, 94, 0.2);
-        color: #4ade80;
-        border: 1px solid #22c55e;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-weight: 700;
-        font-size: 0.85rem;
-        display: inline-block;
-    }
 
+    /* أزرار التبويبات الفخمة */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-        background-color: rgba(15, 23, 42, 0.6);
-        padding: 8px;
-        border-radius: 12px;
+        gap: 10px;
+        background-color: rgba(15, 23, 42, 0.75);
+        padding: 10px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
     }
     
     .stTabs [data-baseweb="tab"] {
-        border-radius: 8px;
-        padding: 10px 20px;
+        border-radius: 10px;
+        padding: 10px 24px;
         color: #94a3b8;
-        font-weight: 600;
+        font-weight: 700;
+        font-size: 1rem;
+        transition: all 0.2s ease;
     }
     
     .stTabs [aria-selected="true"] {
-        background-color: #4f46e5 !important;
-        color: white !important;
+        background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%) !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
+    }
+    
+    .badge-status {
+        display: inline-block;
+        padding: 6px 16px;
+        border-radius: 30px;
+        font-weight: 800;
+        font-size: 0.88rem;
+    }
+    .badge-pass {
+        background: rgba(34, 197, 94, 0.15);
+        color: #4ade80;
+        border: 1px solid rgba(34, 197, 94, 0.4);
     }
 </style>
 """, unsafe_allow_html=True)
 
-# قاموس ترجمة رموز الأخطاء لأسماء عربية واضحة
-ERROR_LABELS = {
+# ─── قواميس التسميات العربية الصريحة للأخطاء ───
+ERROR_LABELS_AR = {
     "MISSING_CUSTOMER_ID": "معرف العميل مفقود (MISSING_CUSTOMER_ID)",
     "CORRUPTED_ITEMS_JSON": "كود المنتجات تالف (CORRUPTED_ITEMS_JSON)",
     "INVALID_PAYMENT_STATUS": "حالة دفع غير مسموحة (INVALID_PAYMENT_STATUS)",
     "INVALID_NUMERIC": "مبلغ غير صالح (INVALID_NUMERIC)",
-    "IMPOSSIBLE_DATE": "تاريخ مستحيل/تالف (IMPOSSIBLE_DATE)",
+    "IMPOSSIBLE_DATE": "تاريخ مستحيل أو تالف (IMPOSSIBLE_DATE)",
     "MISSING_ORDER_ID": "معرف الطلب مفقود (MISSING_ORDER_ID)",
-    "INVALID_STATUS": "حالة طلب غير مسموحة (INVALID_STATUS)",
+    "INVALID_STATUS": "حالة طلب غير صالحة (INVALID_STATUS)",
     "INVALID_CURRENCY": "عملة غير مسموحة (INVALID_CURRENCY)",
     "INVALID_PHONE": "رقم هاتف غير مطابق (INVALID_PHONE)",
-    "UNKNOWN_PRICE": "سعر مجهول (UNKNOWN_PRICE)",
-    "EMPTY_ITEMS": "قائمة منتجات فارغة (EMPTY_ITEMS)",
+    "UNKNOWN_PRICE": "سعر نصي مجهول (UNKNOWN_PRICE)",
+    "EMPTY_ITEMS": "سلة المنتجات فارغة (EMPTY_ITEMS)",
     "SYMBOLIC_VALUE": "قيمة رمزية مجهولة ??? (SYMBOLIC_VALUE)",
     "INVALID_QUANTITY": "كمية سالبة أو صفرية (INVALID_QUANTITY)",
     "CORRUPTED_EMAIL": "بريد إلكتروني تالف (CORRUPTED_EMAIL)",
     "MISSING_NUMERIC": "حقل رقمي مفقود (MISSING_NUMERIC)",
 }
 
+# ─── دوال استرجاع البيانات المخبأة ───
 @st.cache_resource
 def get_mongo_db():
     try:
@@ -154,70 +176,159 @@ def load_json_report(filename):
 
 db = get_mongo_db()
 
+# ─── الشريط الجانبي (Sidebar Control Center) ───
 with st.sidebar:
-    st.markdown("### ⚡ منصة خط البيانات الضخمة")
-    st.markdown("**مقرر البيانات الضخمة (العملي)**\n\nجامعة الرازي | إشراف: **م. عمر أبو سند**\n\nالطالب: **زياد (السنة الرابعة)**")
+    st.markdown("""
+    <div style='text-align: center; padding: 10px 0;'>
+        <div style='font-size: 3rem;'>⚡</div>
+        <h2 style='margin: 0; font-weight: 900; background: linear-gradient(90deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;'>منصة البيانات الضخمة</h2>
+        <p style='color: #94a3b8; font-size: 0.85rem; margin: 4px 0 0 0;'>مقرر البيانات الضخمة | جامعة الرازي</p>
+    </div>
+    """, unsafe_allow_html=True)
     
     st.markdown("---")
+    st.markdown("👨‍🏫 **إشراف:** م. عمر أبو سند  \n👨‍🎓 **الطالب:** زياد (السنة الرابعة)")
     
+    # شارة حالة MongoDB
     if db is not None:
-        st.markdown("<span class='badge-success'>🟢 متصل بـ MongoDB محلياً</span>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 10px;'><span class='badge-status badge-pass'>🟢 قاعدة MongoDB متصلة وجاهزة</span></div>", unsafe_allow_html=True)
     else:
-        st.error("🔴 غير متصل بـ MongoDB")
-        
+        st.error("🔴 قاعدة MongoDB غير متصلة")
+
     st.markdown("---")
-    st.markdown("#### 🚀 التحكم السريع في خط البيانات")
+    st.markdown("### 🎛️ لوحة التحكم في العينة والمحرك")
     
-    if st.button("⚡ تشغيل خط البيانات الآن (ELT Pipeline)", use_container_width=True):
-        with st.spinner("جاري تشغيل خط البيانات والمعالجة التدفقية..."):
+    # ميزة التحكم الديناميكي في عدد السجلات
+    sample_size = st.number_input(
+        "📊 حجم العينة المطلوب اختبارها (سجل):",
+        min_value=1000,
+        max_value=1000000,
+        value=100000,
+        step=25000,
+        help="اختر عدد الأسطر التي سيتم استخراجها لحظياً من ملف الـ 13GB لاختبارها."
+    )
+    
+    engine_choice = st.selectbox(
+        "⚙️ محرك المعالجة:",
+        ["تلقائي عبر الموجه (File Router)", "محرك بايثون التدفيقي (Python Batch)", "محرك أباتشي سبارك (PySpark)"],
+        index=0
+    )
+    
+    if st.button("🚀 توليد العينة وتشغيل خط البيانات الآن", use_container_width=True):
+        with st.spinner(f"جاري استخراج {sample_size:,} سجل من ملف الـ 13GB ومعالجتها..."):
+            from src.create_small_sample import create_sample
             from src.elt_pipeline import run as run_elt
-            target_csv = PROJECT_ROOT / "data" / "sample_orders.csv"
-            rep = run_elt(str(target_csv))
-            st.success(f"✅ اكتمل التشغيل في {rep['elapsed_seconds']:.2f} ثانية!")
+            
+            huge_csv = PROJECT_ROOT.parent / "big data" / "orders_huge_mixed_quality.csv"
+            sample_target = PROJECT_ROOT / "data" / "sample_orders.csv"
+            
+            # استخراج العينة لحظياً
+            create_sample(str(huge_csv), str(sample_target), max_rows=int(sample_size))
+            
+            # تشغيل خط البيانات
+            force_eng = None
+            if "Python" in engine_choice:
+                force_eng = "python_batch"
+            elif "PySpark" in engine_choice:
+                force_eng = "pyspark"
+                
+            if force_eng == "python_batch":
+                from src import python_loader
+                from src.metrics import PipelineMetrics
+                import uuid
+                m = PipelineMetrics(run_id=str(uuid.uuid4())[:8], file_source=str(sample_target), engine_used="python_batch")
+                python_loader.load(str(sample_target), metrics=m)
+                m.generate_report()
+            elif force_eng == "pyspark":
+                from src import spark_loader
+                from src.metrics import PipelineMetrics
+                import uuid
+                m = PipelineMetrics(run_id=str(uuid.uuid4())[:8], file_source=str(sample_target), engine_used="pyspark")
+                spark_loader.load(str(sample_target), metrics=m)
+                m.generate_report()
+            else:
+                run_elt(str(sample_target))
+                
+            st.success(f"✅ تم توليد {sample_size:,} سجل ومعالجتها بنجاح!")
             st.rerun()
 
     st.markdown("---")
-    st.info("💡 **المستودع السحابي:**\n\n[github.com/ziad0110/big-data-pipeline](https://github.com/ziad0110/big-data-pipeline)")
+    st.markdown("🔗 **المستودع الرسمي للمشروع:**  \n[github.com/ziad0110/big-data-pipeline](https://github.com/ziad0110/big-data-pipeline)")
 
+# ─── الترويسة الرئيسية العلوية ───
 st.markdown("""
 <div style='text-align: center; margin-bottom: 25px;'>
-    <h1 style='font-size: 2.3rem; font-weight: 900; background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent;'>
-        لوحة التحكم التفاعلية لخط البيانات الهجين (Hybrid ELT Platform)
+    <h1 style='font-size: 2.6rem; font-weight: 900; background: linear-gradient(90deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 6px;'>
+        منصة تحليل وتدقيق خط البيانات الضخمة الهجين
     </h1>
-    <p style='color: #94a3b8; font-size: 1.05rem;'>
-        معالجة وتدقيق فواتير المتاجر الإلكترونية مع التحليل الموزع لـ 30 مليون سجل بـ Apache Spark
+    <p style='color: #94a3b8; font-size: 1.1rem; max-width: 800px; margin: 0 auto;'>
+        معالجة فواتير المتاجر الإلكترونية مع التدقيق الآلي والتحليل الموزع لـ 30 مليون سجل بـ Apache Spark
     </p>
 </div>
 """, unsafe_allow_html=True)
 
-tab1, tab2, tab3, tab4 = st.tabs([
-    "📊 مراقبة خط البيانات (Live Pipeline Monitor)",
-    "⚡ تحليلات الـ 30 مليون سجل (PySpark 30M Analytics)",
-    "🛡️ مركز جودة البيانات وسلة العزل (Quality & Quarantine)",
-    "🏗️ المعمارية ومحاكي التوجيه (Architecture & Router)"
+# ─── التبويبات الرئيسية الخمسة ───
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "📊 لوحة المراقبة اللحظية",
+    "⚡ تحليلات الـ 30 مليون سجل بـ Spark",
+    "⚔️ مقارنة المحركين (Python vs Spark)",
+    "🛡️ مركز جودة البيانات وسلة العزل",
+    "🏗️ المعمارية ومحاكي التوجيه"
 ])
 
 # =============================================================================
-# TAB 1: مراقبة خط البيانات الحية ومجموعات MongoDB
+# TAB 1: لوحة المراقبة اللحظية (Live Pipeline Monitor)
 # =============================================================================
 with tab1:
     results_report = load_json_report("results.json")
     
     if results_report:
-        c1, c2, c3, c4, c5 = st.columns(5)
-        with c1:
-            st.markdown(f"<div class='metric-card'><div class='metric-value'>{results_report.get('total_raw_records', 0):,}</div><div class='metric-label'>📥 إجمالي السجلات الخام</div></div>", unsafe_allow_html=True)
-        with c2:
-            st.markdown(f"<div class='metric-card'><div class='metric-value'>{results_report.get('valid_records', 0):,}</div><div class='metric-label'>✅ سجلات سليمة 100%</div></div>", unsafe_allow_html=True)
-        with c3:
-            st.markdown(f"<div class='metric-card'><div class='metric-value'>{results_report.get('corrected_records', 0):,}</div><div class='metric-label'>🛠️ مصححة (Audit Trail)</div></div>", unsafe_allow_html=True)
-        with c4:
-            st.markdown(f"<div class='metric-card'><div class='metric-value'>{results_report.get('quarantined_records', 0):,}</div><div class='metric-label'>⛔ معزولة في Quarantine</div></div>", unsafe_allow_html=True)
-        with c5:
-            st.markdown(f"<div class='metric-card'><div class='metric-value'>{results_report.get('throughput_records_per_sec', 0):,.1f}</div><div class='metric-label'>⚡ السرعة (سجل/ثانية)</div></div>", unsafe_allow_html=True)
+        # بطاقات المؤشرات العلوية
+        k1, k2, k3, k4, k5 = st.columns(5)
+        with k1:
+            st.markdown(f"""
+            <div class='kpi-card'>
+                <div class='kpi-title'>📥 إجمالي السجلات الخام</div>
+                <div class='kpi-number'>{results_report.get('total_raw_records', 0):,}</div>
+                <div class='kpi-subtitle'>الملف: {Path(results_report.get('file_source', '')).name}</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with k2:
+            st.markdown(f"""
+            <div class='kpi-card'>
+                <div class='kpi-title'>✅ سجلات سليمة 100%</div>
+                <div class='kpi-number'>{results_report.get('valid_records', 0):,}</div>
+                <div class='kpi-subtitle'>تم إدخالها مباشرة</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with k3:
+            st.markdown(f"""
+            <div class='kpi-card'>
+                <div class='kpi-title'>🛠️ مصححة بالتدقيق</div>
+                <div class='kpi-number'>{results_report.get('corrected_records', 0):,}</div>
+                <div class='kpi-subtitle'>سجل تدقيق (Audit Trail)</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with k4:
+            st.markdown(f"""
+            <div class='kpi-card'>
+                <div class='kpi-title'>⛔ معزولة في Quarantine</div>
+                <div class='kpi-number'>{results_report.get('quarantined_records', 0):,}</div>
+                <div class='kpi-subtitle'>حالات شذوذ وبيانات تالفة</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with k5:
+            st.markdown(f"""
+            <div class='kpi-card'>
+                <div class='kpi-title'>⚡ سرعة المعالجة اللحظية</div>
+                <div class='kpi-number'>{results_report.get('throughput_records_per_sec', 0):,.0f}</div>
+                <div class='kpi-subtitle'>سجل في الثانية الواحدة</div>
+            </div>
+            """, unsafe_allow_html=True)
             
         st.markdown("<br>", unsafe_allow_html=True)
         
+        # بطاقة تأكيد فحص الاتساق الرياضي
         raw_t = results_report.get('total_raw_records', 0)
         v_t = results_report.get('valid_records', 0)
         c_t = results_report.get('corrected_records', 0)
@@ -225,10 +336,21 @@ with tab1:
         is_ok = (raw_t == v_t + c_t + q_t)
         
         if is_ok:
-            st.success(f"✅ **فحص الاتساق الرياضي الحتمي (Consistency Check): PASSED** — إجمالي السجلات ({raw_t:,}) = السليمة ({v_t:,}) + المصححة ({c_t:,}) + المعزولة ({q_t:,})")
+            st.markdown(f"""
+            <div style='background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 14px; padding: 14px 20px; margin-bottom: 20px;'>
+                <span class='badge-status badge-pass'>PASSED</span>
+                <span style='font-size: 1.05rem; font-weight: 700; color: #4ade80; margin-right: 12px;'>
+                    معادلة الاتساق الرياضي الحتمي محققة بنسبة 100%:
+                </span>
+                <span style='color: #e2e8f0; font-family: monospace;'>
+                    السجلات الخام ({raw_t:,}) = السليمة ({v_t:,}) + المصححة ({c_t:,}) + المعزولة ({q_t:,})
+                </span>
+            </div>
+            """, unsafe_allow_html=True)
         else:
             st.error("❌ فشل فحص الاتساق الرياضي!")
             
+    # إحصائيات مجموعات MongoDB الحية
     st.markdown("### 🗄️ إحصائيات مجموعات MongoDB الحية")
     
     if db is not None:
@@ -238,14 +360,35 @@ with tab1:
         
         m1, m2, m3 = st.columns(3)
         with m1:
-            st.info(f"**`orders_raw` (البيانات الخام):**\n\n### `{col_raw:,}` مستند")
+            st.markdown(f"""
+            <div class='kpi-card' style='border-top: 4px solid #38bdf8;'>
+                <div class='kpi-title'>مجموعة البيانات الخام (orders_raw)</div>
+                <div class='kpi-number' style='font-size: 2.5rem;'>{col_raw:,}</div>
+                <div class='kpi-subtitle'>مستند غير معدل (Raw JSON)</div>
+            </div>
+            """, unsafe_allow_html=True)
         with m2:
-            st.success(f"**`orders_validated` (البيانات النظيفة):**\n\n### `{col_val:,}` مستند فريد")
+            st.markdown(f"""
+            <div class='kpi-card' style='border-top: 4px solid #22c55e;'>
+                <div class='kpi-title'>مجموعة البيانات النظيفة (orders_validated)</div>
+                <div class='kpi-number' style='font-size: 2.5rem; color: #4ade80;'>{col_val:,}</div>
+                <div class='kpi-subtitle'>مفهرسة مع Unique Index على order_id</div>
+            </div>
+            """, unsafe_allow_html=True)
         with m3:
-            st.warning(f"**`orders_quarantine` (سلة العزل):**\n\n### `{col_qua:,}` مستند معزول")
+            st.markdown(f"""
+            <div class='kpi-card' style='border-top: 4px solid #ef4444;'>
+                <div class='kpi-title'>مجموعة سلة العزل (orders_quarantine)</div>
+                <div class='kpi-number' style='font-size: 2.5rem; color: #f87171;'>{col_qua:,}</div>
+                <div class='kpi-subtitle'>معزولة مع أسباب ورموز الأخطاء</div>
+            </div>
+            """, unsafe_allow_html=True)
             
-        st.markdown("#### 🔍 مستعرض المستندات المباشر من MongoDB")
-        target_coll = st.selectbox("اختر المجموعة للعرض الفوري:", [VALIDATED_COLLECTION, RAW_COLLECTION, QUARANTINE_COLLECTION])
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # مستعرض المستندات المباشر
+        st.markdown("#### 🔍 مستعرض المستندات المباشر من قاعدة البيانات")
+        target_coll = st.selectbox("اختر المجموعة للاستعراض الفوري:", [VALIDATED_COLLECTION, RAW_COLLECTION, QUARANTINE_COLLECTION])
         
         docs = list(db[target_coll].find().limit(3))
         if docs:
@@ -254,14 +397,14 @@ with tab1:
                     d['_id'] = str(d['_id'])
             st.json(docs)
     else:
-        st.warning("تعذر الاتصال بـ MongoDB محلياً لعرض السجلات الحية.")
+        st.warning("تعذر الاتصال بقاعدة MongoDB محلياً.")
 
 # =============================================================================
-# TAB 2: تحليلات الـ 30 مليون سجل بـ Apache Spark
+# TAB 2: تحليلات الـ 30 مليون سجل بـ Spark
 # =============================================================================
 with tab2:
-    st.markdown("### ⚡ مركز تحليلات البيانات الضخمة (30 Million Records Analysis via PySpark)")
-    st.markdown("يقوم هذا القسم بقراءة ملف الـ **13.26 GB** كاملاً في الذاكرة العشوائية عبر محرك **Apache Spark** بتوازي 16 بارتشن واستخراج المؤشرات الإحصائية والتجارية الكبرى دون حفظها في القرص.")
+    st.markdown("### ⚡ مركز تحليلات البيانات الضخمة (30 Million Records Distributed Analytics)")
+    st.markdown("يقوم هذا القسم بقراءة ملف البيانات الضخمة كاملاً (**13.26 GB**) في الذاكرة العشوائية عبر محرك **Apache Spark** بتوازي 16 بارتشن واستخراج المؤشرات الكبرى دون الحاجة لتخزينها في القرص.")
     
     spark_rep = load_json_report("spark_analysis_30m.json")
     
@@ -270,28 +413,54 @@ with tab2:
         run_30m = st.button("🔥 تشغيل تحليل ملف الـ 13.26 GB كاملاً الآن بـ PySpark", use_container_width=True)
         
     if run_30m:
-        with st.spinner("جاري قراءة وتجميع الـ 13.26 جيجابايت كاملاً عبر Apache Spark (قد يستغرق 1-3 دقائق)..."):
+        with st.spinner("جاري قراءة وتجميع الـ 13.26 جيجابايت كاملاً عبر Apache Spark (يستغرق حوالي 1-2 دقيقة)..."):
             from src.spark_analyzer import analyze_dataset
             huge_csv = PROJECT_ROOT.parent / "big data" / "orders_huge_mixed_quality.csv"
             spark_rep = analyze_dataset(str(huge_csv))
-            st.success("✅ اكتمل تحليل البيانات الضخمة بنجاح تام!")
+            st.success("✅ اكتمل تحليل البيانات الضخمة لملف الـ 13.26 GB بنجاح تام!")
             st.rerun()
                 
     if spark_rep:
+        # بطاقات المقاييس الكبرى
         k1, k2, k3, k4 = st.columns(4)
         with k1:
-            st.markdown(f"<div class='metric-card'><div class='metric-value'>{spark_rep.get('total_records', 0):,}</div><div class='metric-label'>📦 إجمالي السجلات المحللة</div></div>", unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class='kpi-card'>
+                <div class='kpi-title'>📦 إجمالي السجلات المحللة</div>
+                <div class='kpi-number'>{spark_rep.get('total_records', 0):,}</div>
+                <div class='kpi-subtitle'>عبر {spark_rep.get('num_spark_partitions', 16)} Partitions</div>
+            </div>
+            """, unsafe_allow_html=True)
         with k2:
             gmv = spark_rep.get('financial_summary', {}).get('estimated_total_gmv_yer', 0)
-            st.markdown(f"<div class='metric-card'><div class='metric-value'>{gmv:,.0f} YER</div><div class='metric-label'>💰 إجمالي المبيعات التقديرية (GMV)</div></div>", unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class='kpi-card'>
+                <div class='kpi-title'>💰 إجمالي المبيعات (GMV)</div>
+                <div class='kpi-number'>{gmv:,.0f} YER</div>
+                <div class='kpi-subtitle'>بالريال اليمني</div>
+            </div>
+            """, unsafe_allow_html=True)
         with k3:
             aov = spark_rep.get('financial_summary', {}).get('average_order_value_yer', 0)
-            st.markdown(f"<div class='metric-card'><div class='metric-value'>{aov:,.0f} YER</div><div class='metric-label'>🏷️ متوسط قيمة الطلب (AOV)</div></div>", unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class='kpi-card'>
+                <div class='kpi-title'>🏷️ متوسط قيمة الطلب (AOV)</div>
+                <div class='kpi-number'>{aov:,.0f} YER</div>
+                <div class='kpi-subtitle'>لكل فاتورة</div>
+            </div>
+            """, unsafe_allow_html=True)
         with k4:
-            st.markdown(f"<div class='metric-card'><div class='metric-value'>{spark_rep.get('num_spark_partitions', 16)}</div><div class='metric-label'>⚙️ عدد الـ Partitions المتوازية</div></div>", unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class='kpi-card'>
+                <div class='kpi-title'>⚡ زمن المعالجة والسرعة</div>
+                <div class='kpi-number'>{spark_rep.get('throughput_records_per_sec', 0):,.0f}</div>
+                <div class='kpi-subtitle'>سجل/ثانية في {spark_rep.get('elapsed_seconds', 0)} ثانية</div>
+            </div>
+            """, unsafe_allow_html=True)
             
         st.markdown("<br>", unsafe_allow_html=True)
         
+        # الرسوم البيانية الأربعة
         g1, g2 = st.columns(2)
         with g1:
             cities_data = spark_rep.get('top_cities', {})
@@ -299,7 +468,7 @@ with tab2:
                 df_cities = pd.DataFrame(list(cities_data.items()), columns=['المدينة', 'عدد الطلبات'])
                 fig_city = px.bar(
                     df_cities, x='المدينة', y='عدد الطلبات',
-                    title='🏙️ توزيع الطلبات عبر المدن اليمنية (Top Cities)',
+                    title='🏙️ توزيع الطلبات عبر المدن اليمنية',
                     color='عدد الطلبات',
                     color_continuous_scale='Viridis',
                     template='plotly_dark'
@@ -313,7 +482,7 @@ with tab2:
                 df_pm = pd.DataFrame(list(pm_data.items()), columns=['طريقة الدفع', 'العدد'])
                 fig_pm = px.pie(
                     df_pm, names='طريقة الدفع', values='العدد',
-                    title='💳 الحصص السوقية لطرق الدفع (Payment Methods)',
+                    title='💳 الحصص السوقية لطرق الدفع',
                     hole=0.45,
                     template='plotly_dark'
                 )
@@ -327,7 +496,7 @@ with tab2:
                 df_st = pd.DataFrame(list(status_data.items()), columns=['الحالة', 'العدد'])
                 fig_st = px.pie(
                     df_st, names='الحالة', values='العدد',
-                    title='📋 توزيع حالات الطلبات (Order Statuses)',
+                    title='📋 توزيع حالات الطلبات',
                     template='plotly_dark'
                 )
                 fig_st.update_layout(font_family="Cairo", margin=dict(l=40, r=40, t=50, b=40))
@@ -349,19 +518,72 @@ with tab2:
         st.warning("⚠️ **لم يتم تشغيل تحليل ملف الـ 13.26 GB بعد.**\n\nاضغط على الزر أعلاه: **🔥 تشغيل تحليل ملف الـ 13.26 GB كاملاً الآن بـ PySpark** لتشغيل محرك Apache Spark الموزع واستخراج الأرقام والإحصائيات الحقيقية أمامك!")
 
 # =============================================================================
-# TAB 3: مركز جودة البيانات وسلة العزل ومستكشف الـ Audit Trail
+# TAB 3: مقارنة المحركين (Python vs Spark Benchmark)
 # =============================================================================
 with tab3:
-    st.markdown("### 🛡️ مركز جودة البيانات وسلة العزل (Data Quality & Quarantine)")
+    st.markdown("### ⚔️ مقارنة الأداء المعياري بين محركي Python و Apache Spark")
+    st.markdown("اختبر نفس ملف البيانات على المحركين وجهاً لوجه وقارن السرعة، استهلاك الذاكرة، وزمن التنفيذ.")
+    
+    bench_rep = load_json_report("benchmark_results.json")
+    
+    if st.button("🏁 بدء اختبار المقارنة بين المحركين الآن (Run Dual Benchmark)", use_container_width=True):
+        with st.spinner("جاري تشغيل خط البيانات على محرك Python ومحرك PySpark بالتتابع للمقارنة..."):
+            from src.benchmark import run_benchmark
+            target_csv = PROJECT_ROOT / "data" / "sample_orders.csv"
+            bench_rep = run_benchmark(str(target_csv))
+            st.success("✅ اكتمل اختبار المقارنة المعيارية بنجاح!")
+            st.rerun()
+            
+    if bench_rep and bench_rep.get("python_batch") and bench_rep.get("pyspark"):
+        py_data = bench_rep["python_batch"]
+        spk_data = bench_rep["pyspark"]
+        
+        # جدول مقارنة الأرقام
+        comp_data = [
+            {"المقياس": "🚀 سرعة المعالجة (سجل/ثانية)", "Python Batch": f"{py_data['throughput_rec_per_sec']:,.1f}", "Apache PySpark": f"{spk_data['throughput_rec_per_sec']:,.1f}"},
+            {"المقياس": "⏱️ زمن التنفيذ (ثواني)", "Python Batch": f"{py_data['elapsed_seconds']}s", "Apache PySpark": f"{spk_data['elapsed_seconds']}s"},
+            {"المقياس": "🧠 استهلاك الذاكرة الإضافي (Delta RAM)", "Python Batch": f"{py_data['memory_delta_mb']} MB", "Apache PySpark": f"{spk_data['memory_delta_mb']} MB"},
+            {"المقياس": "⚙️ المعمارية وطريقة العمل", "Python Batch": "Single-Thread Streaming", "Apache PySpark": "16 Partitions In-Memory"},
+        ]
+        st.table(pd.DataFrame(comp_data))
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # رسم بياني للمقارنة
+        b1, b2 = st.columns(2)
+        with b1:
+            df_speed = pd.DataFrame([
+                {"المحرك": "Python Batch", "السرعة (سجل/ثانية)": py_data['throughput_rec_per_sec']},
+                {"المحرك": "Apache PySpark", "السرعة (سجل/ثانية)": spk_data['throughput_rec_per_sec']}
+            ])
+            fig_speed = px.bar(df_speed, x="المحرك", y="السرعة (سجل/ثانية)", color="المحرك", title="⚡ مقارنة السرعة والإنتاجية (Throughput)", template="plotly_dark")
+            fig_speed.update_layout(font_family="Cairo", margin=dict(l=40, r=40, t=50, b=40))
+            st.plotly_chart(fig_speed, use_container_width=True)
+            
+        with b2:
+            df_time = pd.DataFrame([
+                {"المحرك": "Python Batch", "الوقت (ثواني)": py_data['elapsed_seconds']},
+                {"المحرك": "Apache PySpark", "الوقت (ثواني)": spk_data['elapsed_seconds']}
+            ])
+            fig_time = px.bar(df_time, x="المحرك", y="الوقت (ثواني)", color="المحرك", title="⏱️ مقارنة زمن المعالجة الكلي (Elapsed Time)", template="plotly_dark")
+            fig_time.update_layout(font_family="Cairo", margin=dict(l=40, r=40, t=50, b=40))
+            st.plotly_chart(fig_time, use_container_width=True)
+    else:
+        st.info("💡 اضغط على زر **بدء اختبار المقارنة بين المحركين الآن** لتشغيل الاختبار وعرض المقارنة وجهاً لوجه!")
+
+# =============================================================================
+# TAB 4: مركز جودة البيانات وسلة العزل (Quality & Quarantine)
+# =============================================================================
+with tab4:
+    st.markdown("### 🛡️ مركز جودة البيانات وسلة العزل ومستكشف التدقيق")
     
     results_report = load_json_report("results.json")
     if results_report and 'error_breakdown' in results_report:
         err_dict = results_report['error_breakdown']
         
-        # تحويل الرموز الإنجليزية لأسماء عربية واضحة ومقروءة
         formatted_errs = []
         for k, v in err_dict.items():
-            label = ERROR_LABELS.get(k, k)
+            label = ERROR_LABELS_AR.get(k, k)
             formatted_errs.append({"الخطأ": label, "العدد": v})
             
         df_err = pd.DataFrame(formatted_errs).sort_values("العدد", ascending=True)
@@ -408,9 +630,9 @@ with tab3:
         st.warning("يرجى تشغيل MongoDB لعرض سجلات التدقيق.")
 
 # =============================================================================
-# TAB 4: المعمارية ومحاكي موجه الملفات (Architecture & Router Simulator)
+# TAB 5: المعمارية ومحاكي موجه الملفات (Architecture & Router)
 # =============================================================================
-with tab4:
+with tab5:
     st.markdown("### 🏗️ معمارية خط البيانات الهجين ومحاكي الـ File Router")
     
     st.markdown("#### 🎛️ محاكي التوجيه التفاعلي (Live Engine Decision Simulator)")

@@ -1,5 +1,5 @@
 {
-    "run_id": "5543c0e4",
+    "run_id": "614959f4",
     "file_source": "C:\\Users\\ziad\\Desktop\\4th year\\tkalef\\omar abu sanad\\تكاليف\\مشروع نهائي\\midterm-data-pipeline\\data\\sample_orders.csv",
     "engine_used": "python_batch",
     "total_raw_records": 100000,
@@ -7,11 +7,11 @@
     "corrected_records": 14590,
     "quarantined_records": 10663,
     "consistency_check": "PASSED",
-    "elapsed_seconds": 26.08,
-    "throughput_records_per_sec": 3834.36,
-    "memory_start_mb": 35.6,
-    "memory_end_mb": 76.08,
-    "memory_delta_mb": 40.48,
+    "elapsed_seconds": 25.14,
+    "throughput_records_per_sec": 3977.72,
+    "memory_start_mb": 175.18,
+    "memory_end_mb": 234.06,
+    "memory_delta_mb": 58.88,
     "error_breakdown": {
         "INVALID_QUANTITY": 674,
         "MISSING_CUSTOMER_ID": 1411,
@@ -28,5 +28,5 @@
         "IMPOSSIBLE_DATE": 722,
         "UNKNOWN_PRICE": 683
     },
-    "timestamp": "2026-08-19T09:06:57.128789"
+    "timestamp": "2026-08-21T13:56:44.307630"
 }
