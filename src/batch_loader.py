@@ -81,19 +81,21 @@ def _insert_batch_quarantine(collection, batch):
         return details.get("nInserted", 0)
 
 
-def load(file_path, run_id=None, metrics=None):
+def load(file_path, run_id=None, metrics=None, progress_callback=None, cancel_check=None):
     """
     تحميل ملف CSV صغير (<= 200MB) إلى MongoDB باستخدام Python Batch Streaming.
 
     المراحل:
       1. قراءة تدفقية → إدخال خام في orders_raw
       2. تطبيق قواعد التنظيف → orders_validated أو orders_quarantine
-      3. تتبع المقاييس
+      3. تتبع المقاييس وتحديث شريط التقدم والوقت المتبقي
 
     Args:
         file_path: مسار ملف CSV
         run_id: معرف التشغيل (يُولَّد تلقائياً إذا لم يُعطَ)
         metrics: كائن PipelineMetrics (يُنشأ تلقائياً إذا لم يُعطَ)
+        progress_callback: دالة رد اتصال لتحديث واجهة المستخدم (current, total, speed, eta)
+        cancel_check: دالة تفحص ما إذا طلب المستخدم إيقاف المعالجة (ترجع True للإيقاف)
 
     Returns:
         PipelineMetrics: كائن المقاييس بعد الانتهاء
@@ -197,8 +199,19 @@ def load(file_path, run_id=None, metrics=None):
                 )
                 quarantine_batch.clear()
 
-            # طباعة التقدم
+            # طباعة وتحديث التقدم
             metrics.print_progress(interval=BATCH_SIZE)
+            
+            # فحص طلب الإلغاء
+            if cancel_check and cancel_check():
+                print("[WARN] User requested pipeline cancellation!")
+                break
+
+            # رد اتصال تحديث واجهة المستخدم
+            if progress_callback and (row_num % 2500 == 0 or row_num == 1):
+                elapsed_now = time.perf_counter() - metrics.start_time
+                speed_now = row_num / elapsed_now if elapsed_now > 0 else 0
+                progress_callback(row_num, speed_now, elapsed_now)
 
     # ─── Flush remaining batches ───
     if raw_batch:

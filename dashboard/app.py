@@ -210,46 +210,91 @@ with st.sidebar:
     
     engine_choice = st.selectbox(
         "⚙️ محرك المعالجة:",
-        ["تلقائي عبر الموجه (File Router)", "محرك بايثون التدفيقي (Python Batch)", "محرك أباتشي سبارك (PySpark)"],
+        ["محرك بايثون التدفيقي (Python Batch)", "محرك أباتشي سبارك (PySpark)", "تلقائي عبر الموجه (File Router)"],
         index=0
     )
     
-    if st.button("🚀 توليد العينة وتشغيل خط البيانات الآن", use_container_width=True):
-        with st.spinner(f"جاري استخراج {sample_size:,} سجل من ملف الـ 13GB ومعالجتها..."):
+    # حاويات التقدم والإلغاء
+    prog_container = st.container()
+    
+    col_run, col_stop = st.columns([3, 1])
+    with col_run:
+        start_pipeline = st.button("🚀 تشغيل خط البيانات الآن", use_container_width=True, type="primary")
+    with col_stop:
+        stop_btn = st.button("⛔ إيقاف", use_container_width=True, help="إيقاف المعالجة فوراً")
+        
+    if "is_running" not in st.session_state:
+        st.session_state["is_running"] = False
+    if "cancel_requested" not in st.session_state:
+        st.session_state["cancel_requested"] = False
+        
+    if stop_btn:
+        st.session_state["cancel_requested"] = True
+        st.warning("⚠️ تم إرسال طلب إيقاف المعالجة...")
+
+    if start_pipeline:
+        st.session_state["is_running"] = True
+        st.session_state["cancel_requested"] = False
+        
+        with prog_container:
+            st.info(f"⏳ **المرحلة 1:** جاري استخراج {int(sample_size):,} سجل تدفقياً من ملف الـ 13GB...")
             from src.create_small_sample import create_sample
-            from src.elt_pipeline import run as run_elt
-            
             huge_csv = PROJECT_ROOT.parent / "big data" / "orders_huge_mixed_quality.csv"
             sample_target = PROJECT_ROOT / "data" / "sample_orders.csv"
             
-            # استخراج العينة لحظياً
-            create_sample(str(huge_csv), str(sample_target), max_rows=int(sample_size))
+            # استخراج العينة
+            total_target_rows = create_sample(str(huge_csv), str(sample_target), max_rows=int(sample_size))
             
-            # تشغيل خط البيانات
+            st.success(f"📥 تم تجهيز عينة الـ {total_target_rows:,} سجل! بدء المعالجة والتنظيف...")
+            
+            # شريط التقدم والوقت المتبقي (ETA)
+            prog_bar = st.progress(0.0)
+            status_text = st.empty()
+            
+            def update_progress(current_row, speed_now, elapsed_now):
+                pct = min(1.0, current_row / float(total_target_rows))
+                prog_bar.progress(pct)
+                
+                # حساب الوقت التقديري المتبقي (ETA)
+                rem_rows = max(0, total_target_rows - current_row)
+                eta_sec = rem_rows / speed_now if speed_now > 0 else 0
+                
+                status_text.markdown(
+                    f"**⚡ السرعة:** `{speed_now:,.0f}` سجل/ثانية | "
+                    f"**📊 المعالج:** `{current_row:,} / {total_target_rows:,}` ({pct*100:.1f}%) | "
+                    f"**⏳ الوقت المتبقي (ETA):** `{eta_sec:.1f}` ثانية"
+                )
+                
+            def check_cancel():
+                return st.session_state.get("cancel_requested", False)
+                
             force_eng = None
             if "Python" in engine_choice:
                 force_eng = "python_batch"
             elif "PySpark" in engine_choice:
                 force_eng = "pyspark"
                 
-            if force_eng == "python_batch":
-                from src import python_loader
+            if force_eng == "python_batch" or force_eng is None:
+                from src import batch_loader
                 from src.metrics import PipelineMetrics
                 import uuid
                 m = PipelineMetrics(run_id=str(uuid.uuid4())[:8], file_source=str(sample_target), engine_used="python_batch")
-                python_loader.load(str(sample_target), metrics=m)
-                m.generate_report()
-            elif force_eng == "pyspark":
+                batch_loader.load(str(sample_target), metrics=m, progress_callback=update_progress, cancel_check=check_cancel)
+                rep = m.generate_report()
+            else:
                 from src import spark_loader
                 from src.metrics import PipelineMetrics
                 import uuid
                 m = PipelineMetrics(run_id=str(uuid.uuid4())[:8], file_source=str(sample_target), engine_used="pyspark")
                 spark_loader.load(str(sample_target), metrics=m)
-                m.generate_report()
-            else:
-                run_elt(str(sample_target))
+                rep = m.generate_report()
                 
-            st.success(f"✅ تم توليد {sample_size:,} سجل ومعالجتها بنجاح!")
+            prog_bar.progress(1.0)
+            if check_cancel():
+                st.warning("⛔ تم إيقاف المعالجة بناءً على طلبك.")
+            else:
+                st.success(f"✅ اكتملت المعالجة في {rep.get('elapsed_seconds', 0):.2f} ثانية بسرعة {rep.get('throughput_records_per_sec', 0):,.1f} سجل/ثانية!")
+            time.sleep(1)
             st.rerun()
 
     st.markdown("---")
