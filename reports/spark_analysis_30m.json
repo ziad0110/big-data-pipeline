@@ -1,0 +1,66 @@
+{
+  "dataset_name": "orders_huge_mixed_quality.csv",
+  "file_size_gb": 12.35,
+  "file_size_mb": 12650.32,
+  "total_records": 30000000,
+  "num_spark_partitions": 99,
+  "spark_driver_memory": "6g",
+  "elapsed_seconds": 283.08,
+  "throughput_records_per_sec": 105978.61,
+  "financial_summary": {
+    "estimated_total_gmv_yer": 7759556831500.0,
+    "average_order_value_yer": 260470.25
+  },
+  "status_distribution": {
+    "قيد الشحن": 4911108,
+    "قيد الانتظار": 4910226,
+    "ملغي": 4910029,
+    "مرتجع": 4908626,
+    "مؤكد": 4908259,
+    "تم التسليم": 4907753,
+    "حالة غير معروفة تمامًا": 210194,
+    "  مرتجع  ": 55793,
+    "  ملغي  ": 55686,
+    "  قيد الشحن  ": 55633,
+    "  قيد الانتظار  ": 55577,
+    "  تم التسليم  ": 55571,
+    "  مؤكد  ": 55545
+  },
+  "payment_methods": {
+    "محفظة إلكترونية": 10002523,
+    "نقدًا عند التسليم": 9998775,
+    "بطاقة": 9998702
+  },
+  "payment_statuses": {
+    "بانتظار الدفع": 19775790,
+    "تم الدفع": 9890424,
+    "قيد الدفع": 222692,
+    "مدفوع": 111094
+  },
+  "top_cities": {
+    "صنعاء": 3002259,
+    "عدن": 3001972,
+    "لحج": 3001623,
+    "تعز": 3000408,
+    "عمران": 3000297,
+    "المكلا": 3000185,
+    "إب": 3000066,
+    "الحديدة": 2999025,
+    "حجة": 2997108,
+    "ذمار": 2997057
+  },
+  "delivery_types": {
+    "سريع": 15005141,
+    "عادي": 14994859
+  },
+  "data_quality_anomalies": {
+    "MISSING_ORDER_ID": 209392,
+    "MISSING_CUSTOMER_ID": 419474,
+    "SYMBOLIC_VALUE": 209432,
+    "CORRUPTED_ITEMS_JSON": 209432,
+    "INVALID_PHONE": 880104,
+    "INVALID_EMAIL": 752383,
+    "NON_STANDARD_CURRENCY": 545157
+  },
+  "analyzed_at": "2026-08-21T11:13:47.983897+00:00"
+}

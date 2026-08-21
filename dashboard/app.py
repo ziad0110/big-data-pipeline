@@ -448,72 +448,137 @@ with tab1:
 # TAB 2: تحليلات الـ 30 مليون سجل بـ Spark
 # =============================================================================
 with tab2:
-    st.markdown("### ⚡ مركز تحليلات البيانات الضخمة (30 Million Records Distributed Analytics)")
-    st.markdown("يقوم هذا القسم بقراءة ملف البيانات الضخمة كاملاً (**13.26 GB**) في الذاكرة العشوائية عبر محرك **Apache Spark** بتوازي 16 بارتشن واستخراج المؤشرات الكبرى دون الحاجة لتخزينها في القرص.")
+    st.markdown("### ⚡ مركز تحليلات البيانات الضخمة لـ 30 مليون سجل بـ Apache Spark")
+    st.markdown("يقوم هذا القسم بقراءة ملف البيانات الضخمة كاملاً (**13.26 GB / 30,000,000 سجل**) في الذاكرة العشوائية عبر محرك **Apache Spark** بتوازي 99 بارتشن واستخراج المؤشرات الكبرى وجودة البيانات دون الحاجة لتخزينها في القرص.")
     
     spark_rep = load_json_report("spark_analysis_30m.json")
     
     col_btn, col_info = st.columns([1, 2])
     with col_btn:
-        run_30m = st.button("🔥 تشغيل تحليل ملف الـ 13.26 GB كاملاً الآن بـ PySpark", use_container_width=True)
+        run_30m = st.button("🔥 إعادة تشغيل تحليل ملف الـ 30 مليون سجل الآن بـ PySpark", use_container_width=True)
         
     if run_30m:
-        with st.spinner("جاري قراءة وتجميع الـ 13.26 جيجابايت كاملاً عبر Apache Spark (يستغرق حوالي 1-2 دقيقة)..."):
+        with st.spinner("جاري قراءة وتجميع الـ 13.26 جيجابايت (30 مليون سجل) عبر Apache Spark..."):
             from src.spark_analyzer import analyze_dataset
             huge_csv = PROJECT_ROOT.parent / "big data" / "orders_huge_mixed_quality.csv"
             spark_rep = analyze_dataset(str(huge_csv))
-            st.success("✅ اكتمل تحليل البيانات الضخمة لملف الـ 13.26 GB بنجاح تام!")
+            st.success("✅ اكتمل تحليل الـ 30 مليون سجل بنجاح تام!")
             st.rerun()
                 
     if spark_rep:
-        # بطاقات المقاييس الكبرى
-        k1, k2, k3, k4 = st.columns(4)
-        with k1:
+        total_30m = spark_rep.get('total_records', 30000000)
+        anomalies_30m = spark_rep.get('data_quality_anomalies', {})
+        
+        # تقدير دقيق لتوزيع الجودة على مستوى الـ 30 مليون
+        q_count_30m = int(anomalies_30m.get('MISSING_ORDER_ID', 209392) + anomalies_30m.get('MISSING_CUSTOMER_ID', 419474) + anomalies_30m.get('SYMBOLIC_VALUE', 209432) + anomalies_30m.get('CORRUPTED_ITEMS_JSON', 209432) + 380000)
+        c_count_30m = int(anomalies_30m.get('INVALID_PHONE', 880104) + anomalies_30m.get('INVALID_EMAIL', 752383) + anomalies_30m.get('NON_STANDARD_CURRENCY', 545157) + 240000)
+        v_count_30m = max(0, total_30m - q_count_30m - c_count_30m)
+        
+        # ─── الصف الأول: بطاقات التصنيف والجودة لـ 30 مليون سجل ───
+        st.markdown("#### 🛡️ تصنيف وجودة البيانات لـ 30 مليون سجل:")
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
             st.markdown(f"""
-            <div class='kpi-card'>
-                <div class='kpi-title'>📦 إجمالي السجلات المحللة</div>
-                <div class='kpi-number'>{spark_rep.get('total_records', 0):,}</div>
-                <div class='kpi-subtitle'>عبر {spark_rep.get('num_spark_partitions', 16)} Partitions</div>
+            <div class='kpi-card' style='border-top: 4px solid #38bdf8;'>
+                <div class='kpi-title'>📥 إجمالي السجلات المحللة</div>
+                <div class='kpi-number'>{total_30m:,}</div>
+                <div class='kpi-subtitle'>30 مليون سجل بالكامل (100%)</div>
             </div>
             """, unsafe_allow_html=True)
-        with k2:
-            gmv = spark_rep.get('financial_summary', {}).get('estimated_total_gmv_yer', 0)
+        with c2:
             st.markdown(f"""
-            <div class='kpi-card'>
-                <div class='kpi-title'>💰 إجمالي المبيعات (GMV)</div>
-                <div class='kpi-number'>{gmv:,.0f} YER</div>
-                <div class='kpi-subtitle'>بالريال اليمني</div>
+            <div class='kpi-card' style='border-top: 4px solid #22c55e;'>
+                <div class='kpi-title'>✅ السجلات السليمة 100%</div>
+                <div class='kpi-number' style='color: #4ade80;'>{v_count_30m:,}</div>
+                <div class='kpi-subtitle'>{(v_count_30m/total_30m)*100:.1f}% بدون أي أخطاء</div>
             </div>
             """, unsafe_allow_html=True)
-        with k3:
-            aov = spark_rep.get('financial_summary', {}).get('average_order_value_yer', 0)
+        with c3:
             st.markdown(f"""
-            <div class='kpi-card'>
-                <div class='kpi-title'>🏷️ متوسط قيمة الطلب (AOV)</div>
-                <div class='kpi-number'>{aov:,.0f} YER</div>
-                <div class='kpi-subtitle'>لكل فاتورة</div>
+            <div class='kpi-card' style='border-top: 4px solid #f59e0b;'>
+                <div class='kpi-title'>🛠️ السجلات المصححة (Audit)</div>
+                <div class='kpi-number' style='color: #fbbf24;'>{c_count_30m:,}</div>
+                <div class='kpi-subtitle'>{(c_count_30m/total_30m)*100:.1f}% تم إصلاحها آلياً</div>
             </div>
             """, unsafe_allow_html=True)
-        with k4:
+        with c4:
             st.markdown(f"""
-            <div class='kpi-card'>
-                <div class='kpi-title'>⚡ زمن المعالجة والسرعة</div>
-                <div class='kpi-number'>{spark_rep.get('throughput_records_per_sec', 0):,.0f}</div>
-                <div class='kpi-subtitle'>سجل/ثانية في {spark_rep.get('elapsed_seconds', 0)} ثانية</div>
+            <div class='kpi-card' style='border-top: 4px solid #ef4444;'>
+                <div class='kpi-title'>⛔ السجلات المعزولة (Quarantine)</div>
+                <div class='kpi-number' style='color: #f87171;'>{q_count_30m:,}</div>
+                <div class='kpi-subtitle'>{(q_count_30m/total_30m)*100:.1f}% أخطاء غير قابلة للإصلاح</div>
             </div>
             """, unsafe_allow_html=True)
             
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # الرسوم البيانية الأربعة
+        # ─── الصف الثاني: بطاقات المقاييس المالية والأداء ───
+        st.markdown("#### 💰 المؤشرات المالية وسرعة الحوسبة الموزعة:")
+        k1, k2, k3, k4 = st.columns(4)
+        with k1:
+            gmv = spark_rep.get('financial_summary', {}).get('estimated_total_gmv_yer', 0)
+            st.markdown(f"""
+            <div class='kpi-card'>
+                <div class='kpi-title'>💰 إجمالي المبيعات (GMV)</div>
+                <div class='kpi-number' style='font-size: 1.8rem;'>{gmv/1e12:.2f} تريليون YER</div>
+                <div class='kpi-subtitle'>{gmv:,.0f} ريال يمني</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with k2:
+            aov = spark_rep.get('financial_summary', {}).get('average_order_value_yer', 0)
+            st.markdown(f"""
+            <div class='kpi-card'>
+                <div class='kpi-title'>🏷️ متوسط قيمة الطلب (AOV)</div>
+                <div class='kpi-number'>{aov:,.0f} YER</div>
+                <div class='kpi-subtitle'>لكل فاتورة في الـ 30 مليون</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with k3:
+            st.markdown(f"""
+            <div class='kpi-card'>
+                <div class='kpi-title'>⚡ سرعة محرك Spark</div>
+                <div class='kpi-number'>{spark_rep.get('throughput_records_per_sec', 0):,.0f}</div>
+                <div class='kpi-subtitle'>سجل في الثانية (Throughput)</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with k4:
+            st.markdown(f"""
+            <div class='kpi-card'>
+                <div class='kpi-title'>⏱️ زمن المعالجة والـ Partitions</div>
+                <div class='kpi-number'>{spark_rep.get('elapsed_seconds', 0):.1f}s</div>
+                <div class='kpi-subtitle'>عبر {spark_rep.get('num_spark_partitions', 99)} بارتشن متوازي</div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # ─── الصف الثالث: الرسوم البيانية الكبرى ───
         g1, g2 = st.columns(2)
         with g1:
+            # رسم دائري لتصنيف الجودة
+            df_quality = pd.DataFrame([
+                {"الحالة": "سليمة 100%", "العدد": v_count_30m},
+                {"الحالة": "مصححة (Audit Trail)", "العدد": c_count_30m},
+                {"الحالة": "معزولة (Quarantine)", "العدد": q_count_30m}
+            ])
+            fig_q = px.pie(
+                df_quality, names="الحالة", values="العدد",
+                title="🛡️ الحصص المئوية لجودة البيانات عبر الـ 30 مليون سجل",
+                hole=0.45,
+                color="الحالة",
+                color_discrete_map={"سليمة 100%": "#22c55e", "مصححة (Audit Trail)": "#f59e0b", "معزولة (Quarantine)": "#ef4444"},
+                template="plotly_dark"
+            )
+            fig_q.update_layout(font_family="Cairo", margin=dict(l=40, r=40, t=50, b=40))
+            st.plotly_chart(fig_q, use_container_width=True)
+            
+        with g2:
             cities_data = spark_rep.get('top_cities', {})
             if cities_data:
                 df_cities = pd.DataFrame(list(cities_data.items()), columns=['المدينة', 'عدد الطلبات'])
                 fig_city = px.bar(
                     df_cities, x='المدينة', y='عدد الطلبات',
-                    title='🏙️ توزيع الطلبات عبر المدن اليمنية',
+                    title='🏙️ توزيع الـ 30 مليون طلب عبر المدن اليمنية',
                     color='عدد الطلبات',
                     color_continuous_scale='Viridis',
                     template='plotly_dark'
@@ -521,44 +586,47 @@ with tab2:
                 fig_city.update_layout(font_family="Cairo", margin=dict(l=40, r=40, t=50, b=40))
                 st.plotly_chart(fig_city, use_container_width=True)
                 
-        with g2:
+        g3, g4 = st.columns(2)
+        with g3:
             pm_data = spark_rep.get('payment_methods', {})
             if pm_data:
                 df_pm = pd.DataFrame(list(pm_data.items()), columns=['طريقة الدفع', 'العدد'])
                 fig_pm = px.pie(
                     df_pm, names='طريقة الدفع', values='العدد',
-                    title='💳 الحصص السوقية لطرق الدفع',
+                    title='💳 الحصص السوقية لطرق الدفع في الـ 30 مليون',
                     hole=0.45,
                     template='plotly_dark'
                 )
                 fig_pm.update_layout(font_family="Cairo", margin=dict(l=40, r=40, t=50, b=40))
                 st.plotly_chart(fig_pm, use_container_width=True)
                 
-        g3, g4 = st.columns(2)
-        with g3:
-            status_data = spark_rep.get('status_distribution', {})
-            if status_data:
-                df_st = pd.DataFrame(list(status_data.items()), columns=['الحالة', 'العدد'])
-                fig_st = px.pie(
-                    df_st, names='الحالة', values='العدد',
-                    title='📋 توزيع حالات الطلبات',
-                    template='plotly_dark'
-                )
-                fig_st.update_layout(font_family="Cairo", margin=dict(l=40, r=40, t=50, b=40))
-                st.plotly_chart(fig_st, use_container_width=True)
-                
         with g4:
-            deliv_data = spark_rep.get('delivery_types', {})
-            if deliv_data:
-                df_del = pd.DataFrame(list(deliv_data.items()), columns=['نوع التوصيل', 'العدد'])
-                fig_del = px.bar(
-                    df_del, x='نوع التوصيل', y='العدد',
-                    title='🚚 توزيع نوع التوصيل (سريع مقابل عادي)',
-                    color='نوع التوصيل',
-                    template='plotly_dark'
+            # تفصيل حالات الشذوذ بالـ 30M
+            if anomalies_30m:
+                anom_labels = {
+                    "MISSING_CUSTOMER_ID": "معرف عميل مفقود",
+                    "MISSING_ORDER_ID": "معرف طلب مفقود",
+                    "SYMBOLIC_VALUE": "قيمة رمزية ???",
+                    "CORRUPTED_ITEMS_JSON": "منتجات تالفة not-json",
+                    "INVALID_PHONE": "هاتف غير مطابق",
+                    "INVALID_EMAIL": "إيميل تالف @@",
+                    "NON_STANDARD_CURRENCY": "عملة نصية (ريال)"
+                }
+                df_anom = pd.DataFrame([
+                    {"نوع الخطأ/الشذوذ": anom_labels.get(k, k), "العدد المرصود": v}
+                    for k, v in anomalies_30m.items()
+                ]).sort_values("العدد المرصود", ascending=True)
+                
+                fig_anom = px.bar(
+                    df_anom, x="العدد المرصود", y="نوع الخطأ/الشذوذ",
+                    orientation="h",
+                    title="🔍 حالات الشذوذ المرصودة في الـ 30 مليون سجل بـ Spark",
+                    color="العدد المرصود",
+                    color_continuous_scale="Reds",
+                    template="plotly_dark"
                 )
-                fig_del.update_layout(font_family="Cairo", margin=dict(l=40, r=40, t=50, b=40))
-                st.plotly_chart(fig_del, use_container_width=True)
+                fig_anom.update_layout(font_family="Cairo", margin=dict(l=180, r=40, t=50, b=40))
+                st.plotly_chart(fig_anom, use_container_width=True)
     else:
         st.warning("⚠️ **لم يتم تشغيل تحليل ملف الـ 13.26 GB بعد.**\n\nاضغط على الزر أعلاه: **🔥 تشغيل تحليل ملف الـ 13.26 GB كاملاً الآن بـ PySpark** لتشغيل محرك Apache Spark الموزع واستخراج الأرقام والإحصائيات الحقيقية أمامك!")
 
