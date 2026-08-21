@@ -1,0 +1,33 @@
+{
+  "file_name": "sample_orders.csv",
+  "file_size_mb": 41.67,
+  "timestamp": "2026-08-21T11:48:07.300265+00:00",
+  "python_batch": {
+    "engine_name": "Python Batch Loader",
+    "run_id": "bench-py-eda1",
+    "total_records": 100000,
+    "valid_records": 74747,
+    "corrected_records": 14590,
+    "quarantined_records": 10663,
+    "elapsed_seconds": 29.3,
+    "throughput_rec_per_sec": 3413.06,
+    "memory_start_mb": 36.52,
+    "memory_end_mb": 87.4,
+    "memory_delta_mb": 50.88,
+    "architecture": "Single-Threaded Streaming Generator (Chunked 5,000)"
+  },
+  "pyspark": {
+    "engine_name": "Apache PySpark Distributed Loader",
+    "run_id": "bench-spk-33cb",
+    "total_records": 100674,
+    "valid_records": 76205,
+    "corrected_records": 14590,
+    "quarantined_records": 9879,
+    "elapsed_seconds": 83.58,
+    "throughput_rec_per_sec": 1204.59,
+    "memory_start_mb": 87.4,
+    "memory_end_mb": 124.3,
+    "memory_delta_mb": 36.9,
+    "architecture": "Distributed In-Memory Partitioning (16 Partitions parallel)"
+  }
+}

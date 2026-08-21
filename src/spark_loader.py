@@ -28,13 +28,23 @@ from src.metrics import PipelineMetrics
 
 def _get_spark_session():
     """إنشاء أو استرجاع SparkSession مع الإعدادات المطلوبة."""
+    import sys
     from pyspark.sql import SparkSession
+
+    os.environ["PYSPARK_PYTHON"] = sys.executable
+    os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
 
     spark = (
         SparkSession.builder
         .appName(SPARK_APP_NAME)
         .master("local[*]")
         .config("spark.driver.memory", SPARK_DRIVER_MEMORY)
+        .config("spark.driver.host", "127.0.0.1")
+        .config("spark.driver.bindAddress", "127.0.0.1")
+        .config("spark.python.worker.reuse", "true")
+        .config("spark.python.worker.timeout", "300")
+        .config("spark.network.timeout", "600s")
+        .config("spark.executor.heartbeatInterval", "60s")
         .config("spark.default.parallelism", str(SPARK_TARGET_PARTITIONS))
         .config("spark.sql.shuffle.partitions", str(SPARK_TARGET_PARTITIONS))
         .config("spark.sql.adaptive.enabled", "true")
