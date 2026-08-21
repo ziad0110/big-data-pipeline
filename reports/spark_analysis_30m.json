@@ -1,0 +1,66 @@
+{
+  "dataset_name": "sample_orders.csv",
+  "file_size_gb": 0.04,
+  "file_size_mb": 41.67,
+  "total_records": 100000,
+  "num_spark_partitions": 11,
+  "spark_driver_memory": "6g",
+  "elapsed_seconds": 19.59,
+  "throughput_records_per_sec": 5104.19,
+  "financial_summary": {
+    "estimated_total_gmv_yer": 25642308000.0,
+    "average_order_value_yer": 258163.1
+  },
+  "status_distribution": {
+    "مرتجع": 16455,
+    "مؤكد": 16450,
+    "ملغي": 16408,
+    "قيد الشحن": 16365,
+    "قيد الانتظار": 16281,
+    "تم التسليم": 16254,
+    "حالة غير معروفة تمامًا": 718,
+    "  مرتجع  ": 187,
+    "  ملغي  ": 186,
+    "  مؤكد  ": 184,
+    "  تم التسليم  ": 176,
+    "  قيد الشحن  ": 171,
+    "  قيد الانتظار  ": 165
+  },
+  "payment_methods": {
+    "محفظة إلكترونية": 33406,
+    "بطاقة": 33320,
+    "نقدًا عند التسليم": 33274
+  },
+  "payment_statuses": {
+    "بانتظار الدفع": 65642,
+    "تم الدفع": 33200,
+    "قيد الدفع": 795,
+    "مدفوع": 363
+  },
+  "top_cities": {
+    "ذمار": 10116,
+    "لحج": 10111,
+    "عدن": 10093,
+    "تعز": 10027,
+    "حجة": 9986,
+    "صنعاء": 9983,
+    "المكلا": 9963,
+    "الحديدة": 9955,
+    "عمران": 9924,
+    "إب": 9842
+  },
+  "delivery_types": {
+    "سريع": 50152,
+    "عادي": 49848
+  },
+  "data_quality_anomalies": {
+    "MISSING_ORDER_ID": 721,
+    "MISSING_CUSTOMER_ID": 1411,
+    "SYMBOLIC_VALUE": 674,
+    "CORRUPTED_ITEMS_JSON": 674,
+    "INVALID_PHONE": 3031,
+    "INVALID_EMAIL": 2498,
+    "NON_STANDARD_CURRENCY": 1831
+  },
+  "analyzed_at": "2026-08-21T10:43:26.197124+00:00"
+}
