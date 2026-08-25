@@ -2,7 +2,7 @@
   "dataset_name": "orders_huge_mixed_quality.csv",
   "file_size_gb": 12.35,
   "file_size_mb": 12650.32,
-  "total_records": 30000000,
+  "total_records": 30209432,
   "num_spark_partitions": 99,
   "spark_driver_memory": "6g",
   "elapsed_seconds": 283.08,

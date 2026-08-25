@@ -10,6 +10,7 @@ batch_loader.py — Python Batch Loader (Streaming)
 """
 
 import csv
+import time
 import uuid
 from datetime import datetime, timezone
 

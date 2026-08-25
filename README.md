@@ -92,8 +92,10 @@ pip install -r requirements.txt
 - `pymongo>=4.6`
 - `pyspark>=3.5`
 - `psutil>=5.9`
-- `python-dotenv>=1.0`
 - `pytest>=8.0`
+- `streamlit>=1.30`
+- `plotly>=5.18`
+- `pandas>=2.0`
 
 ---
 
@@ -132,6 +134,9 @@ midterm-data-pipeline/
 │   ├── __init__.py
 │   └── settings.py              # الإعدادات العامة، الثوابت، وقواعد الأعمال
 │
+├── dashboard/
+│   └── app.py                   # لوحة التحكم التفاعلية (Streamlit + Plotly)
+│
 ├── data/
 │   ├── sample_orders.csv        # ملف عينة لاختبارات التطوير والتشغيل السريع
 │   └── orders_huge_mixed_quality.csv  # ملف البيانات الضخم
@@ -142,11 +147,14 @@ midterm-data-pipeline/
 ├── reports/
 │   ├── results.json             # تقرير التنفيذ بصيغة JSON
 │   ├── results.md               # تقرير التنفيذ بصيغة Markdown
+│   ├── benchmark_results.json   # نتائج مقارنة أداء Python Batch و PySpark
 │   └── screenshots/             # مجلد مخصص للقطات الشاشة التوثيقية
 │
 ├── src/
 │   ├── __init__.py
 │   ├── batch_loader.py          # محرك التدفق والدفعات (Python Batch Streaming)
+│   ├── benchmark.py             # أداة مقارنة الأداء بين Python Batch و PySpark
+│   ├── compare_with_clean.py    # مقارنة المخرجات مع ملف البيانات النظيف
 │   ├── create_small_sample.py   # أداة استخراج عينات البيانات التدفقية
 │   ├── elt_pipeline.py          # منسق خط البيانات وإدارة دورة الحياة (Orchestrator)
 │   ├── file_router.py           # موجه الملفات وتحديد المحرك المناسب بناءً على الحجم
@@ -154,6 +162,7 @@ midterm-data-pipeline/
 │   ├── metrics.py               # متتبع مؤشرات الأداء والاتساق وتوليد التقارير
 │   ├── mongo_setup.py           # تهيئة قاعدة البيانات والفهارس وقواعد التحقق
 │   ├── quality_rules.py         # محرك قواعد التنظيف العشر والتدقيق
+│   ├── spark_analyzer.py        # أداة تحليل الملفات الضخمة بـ PySpark
 │   └── spark_loader.py          # محرك المعالجة المتوازية (PySpark Distributed)
 │
 ├── tests/
@@ -161,6 +170,7 @@ midterm-data-pipeline/
 │   ├── test_cleaning_rules.py   # اختبارات الوحدة لقواعد التنظيف الـ 10
 │   └── test_classification.py   # اختبارات التكامل والتصنيف والبنية وعدم التكرار
 │
+├── run_dashboard.bat            # سكريبت تشغيل لوحة التحكم التفاعلية
 ├── requirements.txt             # حزم ومكتبات بايثون المطلوبة
 └── README.md                    # دليل المشروع الرئيسي
 ```
