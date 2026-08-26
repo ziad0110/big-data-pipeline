@@ -475,17 +475,17 @@ with tab1:
 # =============================================================================
 with tab2:
     st.markdown("### ⚡ مركز تحليلات البيانات الضخمة لـ 30 مليون سجل بـ PySpark")
-    st.markdown("تحليل ومعالجة ملف البيانات الضخمة كاملاً (**13.26 GB / 30,209,432 سجل**) في الذاكرة العشوائية عبر محرك **PySpark (Apache Spark)** بتوازي 99 بارتشن.")
+    st.markdown("تحليل ومعالجة ملف البيانات الضخمة كاملاً (**12.35 GB / 30,000,000 سجل**) في الذاكرة العشوائية عبر محرك **PySpark (Apache Spark)** بتوازي 99 بارتشن.")
     
     spark_rep = load_json_report("spark_analysis_30m.json") or results_report
     
     if spark_rep:
-        total_30m = spark_rep.get('total_records', spark_rep.get('total_raw_records', 30209432))
+        total_30m = spark_rep.get('total_records', spark_rep.get('total_raw_records', 30000000))
         anomalies_30m = spark_rep.get('data_quality_anomalies', spark_rep.get('error_breakdown', {}))
         
         v_count_30m = spark_rep.get('valid_records', 22886416)
         c_count_30m = spark_rep.get('corrected_records', 4345804)
-        q_count_30m = spark_rep.get('quarantined_records', 2977212)
+        q_count_30m = spark_rep.get('quarantined_records', 2767780)
         
         st.markdown("#### 🛡️ تصنيف وجودة البيانات لـ 30 مليون سجل:")
         c1, c2, c3, c4 = st.columns(4)
@@ -494,7 +494,7 @@ with tab2:
             <div class='kpi-card' style='border-top: 4px solid #38bdf8;'>
                 <div class='kpi-title'>📥 إجمالي السجلات المحللة</div>
                 <div class='kpi-number'>{total_30m:,}</div>
-                <div class='kpi-subtitle'>30.2 مليون سجل بالكامل (100%)</div>
+                <div class='kpi-subtitle'>30 مليون سجل بالكامل (100%)</div>
             </div>
             """, unsafe_allow_html=True)
         with c2:

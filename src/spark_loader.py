@@ -265,6 +265,7 @@ def load(file_path, run_id=None, metrics=None):
         .option("encoding", "UTF-8")
         .option("quote", '"')
         .option("escape", '"')
+        .option("multiLine", "true")
         .option("mode", "PERMISSIVE")
         .csv(str(file_path))
     )
@@ -298,10 +299,12 @@ def load(file_path, run_id=None, metrics=None):
         # تسجيل Corrected
         for _ in range(result["corrected"]):
             metrics.record_result("corrected")
-        # تسجيل Quarantine مع أكواد الأخطاء
+        # تسجيل Quarantine السجلات الفعلية
+        for _ in range(result["quarantine"]):
+            metrics.record_result("quarantine")
+        # تسجيل تفصيل أكواد الأخطاء
         for code, count in result["errors"].items():
-            for _ in range(count):
-                metrics.record_result("quarantine", [code])
+            metrics.error_breakdown[code] = metrics.error_breakdown.get(code, 0) + count
             total_errors[code] = total_errors.get(code, 0) + count
 
     # ─── ملخص ───
